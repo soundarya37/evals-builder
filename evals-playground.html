@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Evals Playground</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  :root{
+    --bg: #16241b;
+    --bg-panel: #1c2f22;
+    --bg-panel-raised: #223829;
+    --line: #34503e;
+    --line-soft: #2a4433;
+    --parchment: #ede4d1;
+    --parchment-dim: #b9b6a4;
+    --sage: #8fac82;
+    --turmeric: #c98f3f;
+    --terracotta: #a8623c;
+    --font-display: 'Fraunces', serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--parchment);
+    font-family: var(--font-body);
+    padding: 40px 24px 80px;
+    min-height: 100vh;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; }
+
+  .masthead { border-bottom: 1px solid var(--line); padding-bottom: 18px; margin-bottom: 26px; }
+  .masthead .kicker { font-family: var(--font-mono); font-size: 11px; color: var(--sage); text-transform: uppercase; letter-spacing: 1px; }
+  .masthead h1 { font-family: var(--font-display); font-weight: 500; font-size: 32px; margin: 6px 0 8px; }
+  .masthead p { margin: 0; font-size: 13.5px; color: var(--parchment-dim); max-width: 62ch; line-height: 1.55; }
+
+  /* stepper */
+  .stepper { display: flex; gap: 6px; margin-bottom: 30px; flex-wrap: wrap; }
+  .step-pill {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--parchment-dim);
+    border: 1px solid var(--line-soft);
+    border-radius: 20px;
+    padding: 6px 14px;
+    cursor: pointer;
+    background: transparent;
+  }
+  .step-pill.active { background: var(--sage); color: var(--bg); border-color: var(--sage); }
+  .step-pill.complete { border-color: var(--sage); color: var(--sage); }
+
+  .panel { background: var(--bg-panel); border: 1px solid var(--line-soft); border-radius: 3px; padding: 26px 28px; margin-bottom: 22px; }
+  .panel h2 { font-family: var(--font-display); font-weight: 500; font-size: 21px; margin: 0 0 6px; }
+  .panel .sub { font-size: 12.5px; color: var(--parchment-dim); margin: 0 0 20px; line-height: 1.5; max-width: 64ch; }
+
+  label.field-label { display: block; font-family: var(--font-mono); font-size: 11px; color: var(--sage); margin-bottom: 6px; text-transform: lowercase; }
+  textarea, input[type=text] {
+    width: 100%;
+    background: var(--bg-panel-raised);
+    border: 1px solid var(--line-soft);
+    border-radius: 2px;
+    color: var(--parchment);
+    font-family: var(--font-body);
+    font-size: 13.5px;
+    padding: 10px 12px;
+    resize: vertical;
+  }
+  textarea::placeholder, input::placeholder { color: var(--parchment-dim); }
+  textarea:focus, input:focus { outline: none; border-color: var(--sage); }
+
+  .field-block { margin-bottom: 18px; }
+
+  .output-card, .criterion-card {
+    background: var(--bg-panel-raised);
+    border: 1px solid var(--line-soft);
+    border-radius: 3px;
+    padding: 16px 18px;
+    margin-bottom: 14px;
+    position: relative;
+  }
+  .output-card .tag, .criterion-card .tag {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--turmeric);
+    margin-bottom: 8px;
+    display: block;
+  }
+  .remove-x {
+    position: absolute; top: 12px; right: 14px;
+    background: none; border: none; color: var(--parchment-dim);
+    cursor: pointer; font-size: 15px; line-height: 1;
+  }
+  .remove-x:hover { color: var(--terracotta); }
+
+  .ghost-btn, .primary-btn {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    border-radius: 2px;
+    padding: 8px 16px;
+    cursor: pointer;
+  }
+  .ghost-btn { background: transparent; border: 1px solid var(--line-soft); color: var(--parchment-dim); }
+  .ghost-btn:hover { border-color: var(--sage); color: var(--parchment); }
+  .primary-btn { background: var(--sage); border: 1px solid var(--sage); color: var(--bg); font-weight: 600; }
+  .primary-btn:hover { background: #7c9f6f; }
+
+  .row-actions { display: flex; gap: 10px; margin-top: 6px; }
+  .nav-actions { display: flex; justify-content: space-between; margin-top: 24px; }
+
+  .criterion-inline { display: grid; grid-template-columns: 1fr 90px; gap: 10px; margin-bottom: 10px; }
+  .weight-select { background: var(--bg-panel-raised); border: 1px solid var(--line-soft); color: var(--parchment); font-family: var(--font-mono); font-size: 12px; padding: 8px; border-radius: 2px; }
+
+  /* scoring grid */
+  .score-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+  .score-table th { font-family: var(--font-mono); font-size: 10.5px; color: var(--parchment-dim); text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line-soft); font-weight: 400; }
+  .score-table td { padding: 10px; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+  .crit-name-cell { font-size: 13px; max-width: 200px; }
+  .crit-desc { font-size: 11px; color: var(--parchment-dim); margin-top: 3px; }
+  .score-btns { display: flex; gap: 4px; }
+  .score-btn {
+    font-family: var(--font-mono); font-size: 11px;
+    border: 1px solid var(--line-soft); background: transparent; color: var(--parchment-dim);
+    border-radius: 2px; padding: 5px 8px; cursor: pointer;
+  }
+  .score-btn[data-v="2"].active { background: var(--sage); border-color: var(--sage); color: var(--bg); }
+  .score-btn[data-v="1"].active { background: var(--turmeric); border-color: var(--turmeric); color: var(--bg); }
+  .score-btn[data-v="0"].active { background: var(--terracotta); border-color: var(--terracotta); color: var(--bg); }
+  .note-input { width: 140px; font-size: 11px; padding: 5px 7px; }
+
+  /* summary */
+  .summary-card { background: var(--bg-panel-raised); border-radius: 3px; padding: 16px 18px; margin-bottom: 12px; }
+  .summary-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+  .summary-top .out-name { font-family: var(--font-display); font-size: 17px; }
+  .summary-top .out-score { font-family: var(--font-mono); font-size: 15px; color: var(--turmeric); }
+  .summary-bar-track { width: 100%; height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden; margin-bottom: 10px; }
+  .summary-bar-fill { height: 100%; background: var(--sage); }
+  .summary-crit-row { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--parchment-dim); padding: 4px 0; border-top: 1px dashed var(--line-soft); }
+  .summary-crit-row:first-child { border-top: none; }
+
+  .reflection-box textarea { min-height: 90px; }
+
+  .empty-note { font-size: 12px; color: var(--parchment-dim); font-style: italic; }
+
+  footer { text-align: center; font-family: var(--font-mono); font-size: 11px; color: var(--parchment-dim); margin-top: 20px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <div class="kicker">from evals-for-builders</div>
+    <h1>Evals Playground</h1>
+    <p>Rubric-writing as a design artifact, not a QA afterthought. Paste a prompt and a few real outputs, then build a first rubric the way you'd critique a design — criterion by criterion — and score against it.</p>
+  </div>
+
+  <div class="stepper" id="stepper"></div>
+
+  <div id="stepContent"></div>
+
+  <footer>evals playground — a hands-on companion, prototype v0.1</footer>
+</div>
+
+<script>
+  // ---------- State (in-memory) ----------
+  const state = {
+    step: 1,
+    prompt: '',
+    outputs: [{ id: 1, label: 'Output A', text: '' }, { id: 2, label: 'Output B', text: '' }],
+    nextOutputId: 3,
+    criteria: [
+      { id: 1, name: '', desc: '', weight: 2 }
+    ],
+    nextCritId: 2,
+    scores: {}, // scores[outputId][critId] = { v: 0|1|2, note: '' }
+    reflection: ''
+  };
+
+  const stepLabels = ['Prompt & outputs', 'Build rubric', 'Score', 'Summary'];
+
+  function goStep(n){
+    state.step = n;
+    render();
+  }
+
+  function renderStepper(){
+    const el = document.getElementById('stepper');
+    el.innerHTML = '';
+    stepLabels.forEach((label, i) => {
+      const n = i + 1;
+      const b = document.createElement('button');
+      b.className = 'step-pill' + (n === state.step ? ' active' : n < state.step ? ' complete' : '');
+      b.textContent = `${n}. ${label}`;
+      b.onclick = () => goStep(n);
+      el.appendChild(b);
+    });
+  }
+
+  // ---------- Step 1: Prompt & outputs ----------
+  function renderStep1(){
+    const c = document.getElementById('stepContent');
+    c.innerHTML = `
+      <div class="panel">
+        <h2>What are you evaluating?</h2>
+        <p class="sub">Paste the prompt you gave the model, then two or more real outputs it produced. Real outputs — not hypotheticals — are what make the rubric honest.</p>
+        <div class="field-block">
+          <label class="field-label">the prompt</label>
+          <textarea id="promptInput" rows="4" placeholder="Paste the exact prompt here...">${state.prompt}</textarea>
+        </div>
+        <div id="outputsHolder"></div>
+        <div class="row-actions">
+          <button class="ghost-btn" id="addOutputBtn">+ add another output</button>
+        </div>
+        <div class="nav-actions">
+          <span></span>
+          <button class="primary-btn" id="toStep2">Next: build rubric →</button>
+        </div>
+      </div>
+    `;
+    document.getElementById('promptInput').oninput = e => state.prompt = e.target.value;
+    const holder = document.getElementById('outputsHolder');
+    state.outputs.forEach(o => {
+      const card = document.createElement('div');
+      card.className = 'output-card';
+      card.innerHTML = `
+        <span class="tag">${o.label}</span>
+        ${state.outputs.length > 2 ? `<button class="remove-x" data-id="${o.id}">×</button>` : ''}
+        <textarea rows="3" data-id="${o.id}" placeholder="Paste the model's output here...">${o.text}</textarea>
+      `;
+      holder.appendChild(card);
+    });
+    holder.querySelectorAll('textarea').forEach(t => {
+      t.oninput = () => { state.outputs.find(o => o.id == t.dataset.id).text = t.value; };
+    });
+    holder.querySelectorAll('.remove-x').forEach(x => {
+      x.onclick = () => { state.outputs = state.outputs.filter(o => o.id != x.dataset.id); renderStep1(); };
+    });
+    document.getElementById('addOutputBtn').onclick = () => {
+      const letter = String.fromCharCode(65 + state.outputs.length);
+      state.outputs.push({ id: state.nextOutputId++, label: `Output ${letter}`, text: '' });
+      renderStep1();
+    };
+    document.getElementById('toStep2').onclick = () => goStep(2);
+  }
+
+  // ---------- Step 2: Build rubric ----------
+  function renderStep2(){
+    const c = document.getElementById('stepContent');
+    c.innerHTML = `
+      <div class="panel">
+        <h2>Build the rubric</h2>
+        <p class="sub">Think of each criterion like a design heuristic: name it, then write what "good" actually looks like — specific enough that two people would score the same output the same way.</p>
+        <div id="criteriaHolder"></div>
+        <div class="row-actions">
+          <button class="ghost-btn" id="addCritBtn">+ add criterion</button>
+        </div>
+        <div class="nav-actions">
+          <button class="ghost-btn" id="backTo1">← back</button>
+          <button class="primary-btn" id="toStep3">Next: score outputs →</button>
+        </div>
+      </div>
+    `;
+    const holder = document.getElementById('criteriaHolder');
+    state.criteria.forEach((cr, i) => {
+      const card = document.createElement('div');
+      card.className = 'criterion-card';
+      card.innerHTML = `
+        <span class="tag">criterion ${i + 1}</span>
+        ${state.criteria.length > 1 ? `<button class="remove-x" data-id="${cr.id}">×</button>` : ''}
+        <div class="criterion-inline">
+          <input type="text" data-field="name" data-id="${cr.id}" placeholder="e.g. Tone matches brand voice" value="${cr.name}">
+          <select class="weight-select" data-field="weight" data-id="${cr.id}">
+            <option value="1" ${cr.weight==1?'selected':''}>weight: low</option>
+            <option value="2" ${cr.weight==2?'selected':''}>weight: normal</option>
+            <option value="3" ${cr.weight==3?'selected':''}>weight: high</option>
+          </select>
+        </div>
+        <textarea rows="2" data-field="desc" data-id="${cr.id}" placeholder="What does a pass look like, concretely? What would make it fail?">${cr.desc}</textarea>
+      `;
+      holder.appendChild(card);
+    });
+    holder.querySelectorAll('input, textarea, select').forEach(el => {
+      el.oninput = () => {
+        const cr = state.criteria.find(c2 => c2.id == el.dataset.id);
+        cr[el.dataset.field] = el.dataset.field === 'weight' ? +el.value : el.value;
+      };
+    });
+    holder.querySelectorAll('.remove-x').forEach(x => {
+      x.onclick = () => { state.criteria = state.criteria.filter(c2 => c2.id != x.dataset.id); renderStep2(); };
+    });
+    document.getElementById('addCritBtn').onclick = () => {
+      state.criteria.push({ id: state.nextCritId++, name: '', desc: '', weight: 2 });
+      renderStep2();
+    };
+    document.getElementById('backTo1').onclick = () => goStep(1);
+    document.getElementById('toStep3').onclick = () => goStep(3);
+  }
+
+  // ---------- Step 3: Score ----------
+  function ensureScoreSlot(outId, critId){
+    if (!state.scores[outId]) state.scores[outId] = {};
+    if (!state.scores[outId][critId]) state.scores[outId][critId] = { v: null, note: '' };
+    return state.scores[outId][critId];
+  }
+
+  function renderStep3(){
+    const c = document.getElementById('stepContent');
+    const validCriteria = state.criteria.filter(cr => cr.name.trim());
+    const validOutputs = state.outputs.filter(o => o.text.trim());
+    let body;
+    if (!validCriteria.length || !validOutputs.length){
+      body = `<p class="empty-note">Add at least one named criterion and one output with text before scoring.</p>`;
+    } else {
+      body = validOutputs.map(o => {
+        const rows = validCriteria.map(cr => {
+          const slot = ensureScoreSlot(o.id, cr.id);
+          return `
+            <tr>
+              <td class="crit-name-cell">${cr.name}<div class="crit-desc">${cr.desc || ''}</div></td>
+              <td>
+                <div class="score-btns">
+                  <button class="score-btn ${slot.v===0?'active':''}" data-out="${o.id}" data-crit="${cr.id}" data-v="0">fail</button>
+                  <button class="score-btn ${slot.v===1?'active':''}" data-out="${o.id}" data-crit="${cr.id}" data-v="1">partial</button>
+                  <button class="score-btn ${slot.v===2?'active':''}" data-out="${o.id}" data-crit="${cr.id}" data-v="2">pass</button>
+                </div>
+              </td>
+              <td><input type="text" class="note-input" data-out="${o.id}" data-crit="${cr.id}" placeholder="note (optional)" value="${slot.note}"></td>
+            </tr>
+          `;
+        }).join('');
+        return `
+          <div class="panel">
+            <h2>${o.label}</h2>
+            <table class="score-table">
+              <tr><th>criterion</th><th>score</th><th>note</th></tr>
+              ${rows}
+            </table>
+          </div>
+        `;
+      }).join('');
+    }
+    c.innerHTML = `
+      <div class="panel" style="margin-bottom:14px;">
+        <p class="sub" style="margin:0;">Score each output against each criterion. Where you hesitate between pass and fail, that's usually a sign the criterion description needs sharpening — go back and edit it.</p>
+      </div>
+      ${body}
+      <div class="nav-actions">
+        <button class="ghost-btn" id="backTo2">← back</button>
+        <button class="primary-btn" id="toStep4">See summary →</button>
+      </div>
+    `;
+    c.querySelectorAll('.score-btn').forEach(btn => {
+      btn.onclick = () => {
+        const slot = ensureScoreSlot(btn.dataset.out, btn.dataset.crit);
+        slot.v = +btn.dataset.v;
+        renderStep3();
+      };
+    });
+    c.querySelectorAll('.note-input').forEach(inp => {
+      inp.oninput = () => { ensureScoreSlot(inp.dataset.out, inp.dataset.crit).note = inp.value; };
+    });
+    document.getElementById('backTo2').onclick = () => goStep(2);
+    document.getElementById('toStep4').onclick = () => goStep(4);
+  }
+
+  // ---------- Step 4: Summary ----------
+  function renderStep4(){
+    const c = document.getElementById('stepContent');
+    const validCriteria = state.criteria.filter(cr => cr.name.trim());
+    const validOutputs = state.outputs.filter(o => o.text.trim());
+
+    const cards = validOutputs.map(o => {
+      let totalWeight = 0, earned = 0;
+      const rows = validCriteria.map(cr => {
+        const slot = state.scores[o.id] && state.scores[o.id][cr.id];
+        const v = slot && slot.v !== null ? slot.v : null;
+        if (v !== null){ totalWeight += cr.weight * 2; earned += cr.weight * v; }
+        const label = v === 2 ? 'pass' : v === 1 ? 'partial' : v === 0 ? 'fail' : 'unscored';
+        return `<div class="summary-crit-row"><span>${cr.name}</span><span>${label}</span></div>`;
+      }).join('');
+      const pct = totalWeight ? Math.round((earned / totalWeight) * 100) : 0;
+      return `
+        <div class="summary-card">
+          <div class="summary-top"><span class="out-name">${o.label}</span><span class="out-score">${pct}%</span></div>
+          <div class="summary-bar-track"><div class="summary-bar-fill" style="width:${pct}%"></div></div>
+          ${rows}
+        </div>
+      `;
+    }).join('') || `<p class="empty-note">Nothing scored yet — go back and score at least one output.</p>`;
+
+    c.innerHTML = `
+      <div class="panel">
+        <h2>Summary</h2>
+        <p class="sub">A weighted pass rate isn't the point — the point is whether writing this rubric changed how you'd write the next prompt.</p>
+        ${cards}
+      </div>
+      <div class="panel reflection-box">
+        <h2 style="font-size:16px;">Reflection</h2>
+        <p class="sub">What did building this rubric surface about what you actually wanted from the prompt?</p>
+        <textarea id="reflectionInput" placeholder="e.g. I realized 'helpful' meant three different things across my three criteria...">${state.reflection}</textarea>
+      </div>
+      <div class="nav-actions">
+        <button class="ghost-btn" id="backTo3">← back to scoring</button>
+        <button class="ghost-btn" id="startOver">start a new rubric</button>
+      </div>
+    `;
+    document.getElementById('reflectionInput').oninput = e => state.reflection = e.target.value;
+    document.getElementById('backTo3').onclick = () => goStep(3);
+    document.getElementById('startOver').onclick = () => {
+      if (confirm('Start a new rubric? This clears the current prompt, outputs, and scores.')){
+        Object.assign(state, {
+          step: 1, prompt: '',
+          outputs: [{ id: 1, label: 'Output A', text: '' }, { id: 2, label: 'Output B', text: '' }],
+          nextOutputId: 3,
+          criteria: [{ id: 1, name: '', desc: '', weight: 2 }],
+          nextCritId: 2,
+          scores: {}, reflection: ''
+        });
+        render();
+      }
+    };
+  }
+
+  function render(){
+    renderStepper();
+    if (state.step === 1) renderStep1();
+    else if (state.step === 2) renderStep2();
+    else if (state.step === 3) renderStep3();
+    else renderStep4();
+  }
+
+  render();
+</script>
+</body>
+</html>
